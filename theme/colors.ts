@@ -1,48 +1,48 @@
-import type { ColorPalette } from "./types";
+export const colors = {
+  background: "#fff",
+  primary: "#252424",
+  primaryDark: "#1a1919",
+  primaryLight: "#666666",
+  primaryLighter: "#999999",
+  secondary: "#ececed",
 
-export const colors: ColorPalette = {
-  background: "#FFFFFF",
-  foreground: "#252525",
+  // Purple
+  purple: "#6c73ef",
+  purpleLighter: "#f2f1fd",
+  purpleLight: "#bfbcec",
 
-  card: "#FFFFFF",
-  cardForeground: "#252525",
+  // Orange
+  orange: "#f5ae3f",
+  orangeLighter: "#fcf4ee",
+  orangeLight: "#fad6b9",
 
-  popover: "#FFFFFF",
-  popoverForeground: "#252525",
+  // Blue
+  blue: "#6bb0ff",
+  blueLighter: "#ebf8ff",
+  blueLight: "#95d9ff",
 
-  primary: "#343434",
-  primaryForeground: "#FBFBFB",
+  // Brown
+  brown: "#ab630d",
+  brownLighter: "#fcf4ee",
+  brownLight: "#fad6b9",
 
-  secondary: "#F7F7F7",
-  secondaryForeground: "#343434",
+  // Green
+  green: "#447d4e",
+  greenLighter: "#effaf1",
+  greenLight: "#d1f0d7",
 
-  muted: "#F7F7F7",
-  mutedForeground: "#8E8E8E",
+  // Red
+  red: "#c52b45",
+  redLighter: "#feecef",
+  redLight: "#fac7cf",
 
-  accent: "#F7F7F7",
-  accentForeground: "#343434",
+  // Cyan
+  cyan: "#006eb3",
+  cyanLighter: "#ebf8ff",
+  cyanLight: "#95d9ff",
 
-  destructive: "#E74C3C",
-  destructiveForeground: "#FFFFFF",
-
-  border: "#EBEBEB",
-  input: "#EBEBEB",
-  ring: "#B5B5B5",
-
-  chart1: "#343434",
-  chart2: "#6B6B6B",
-  chart3: "#8E8E8E",
-  chart4: "#B5B5B5",
-  chart5: "#D4D4D4",
-
-  sidebar: "#FBFBFB",
-  sidebarForeground: "#252525",
-  sidebarPrimary: "#343434",
-  sidebarPrimaryForeground: "#FBFBFB",
-  sidebarAccent: "#F7F7F7",
-  sidebarAccentForeground: "#343434",
-  sidebarBorder: "#EBEBEB",
-  sidebarRing: "#B5B5B5",
-} as const;
-
-export type ColorName = keyof typeof colors;
+  // Indigo
+  indigo: "#120d3a",
+  indigoLighter: "#f2f1fd",
+  indigoLight: "#bfbcec",
+};
