@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Container from "@/components/ui/container";
 import { colors } from "@/theme/colors";
 
+import BottomNav from "./_components/bottom-nav";
 import Header from "./_components/header";
 import Notes from "./_components/notes";
 import SearchInput from "./_components/search-input";
@@ -16,7 +17,10 @@ export default function Index() {
         <SearchInput />
         <Tags />
       </View>
-      <Notes />
+      <View style={styles.notesContainer}>
+        <Notes />
+      </View>
+      <BottomNav />
     </Container>
   );
 }
@@ -29,5 +33,8 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     gap: 12,
+  },
+  notesContainer: {
+    flex: 1,
   },
 });

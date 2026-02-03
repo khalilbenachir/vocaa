@@ -12,5 +12,9 @@
     "text2": "Home",
     "text3": "Ideas",
     "text4": "Work"
+  },
+  "bottomNav": {
+    "addNote": "Add note",
+    "record": "Record"
   }
 }

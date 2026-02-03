@@ -1,4 +1,4 @@
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import Entypo from "@expo/vector-icons/Entypo";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -51,11 +51,8 @@ const Note = ({
           <Text style={styles.metaText}>{formatDuration(duration)}</Text>
         </View>
       </View>
-      <MaterialCommunityIcons
-        name="dots-vertical"
-        size={24}
-        color={colors.primary}
-      />
+
+      <Entypo name="chevron-small-right" size={24} color={colors.primary} />
     </TouchableOpacity>
   );
 };
