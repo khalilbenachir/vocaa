@@ -5,6 +5,8 @@ import Container from "@/components/ui/container";
 import { colors } from "@/theme/colors";
 
 import RecordingSheet from "@/components/recording-sheet/recording-sheet";
+import AddNote from "@/components/ui/add-card";
+import { useNotesStore } from "@/stores/use-notes-store";
 import BottomNav from "./_components/bottom-nav";
 import Header from "./_components/header";
 import Notes from "./_components/notes";
@@ -13,6 +15,7 @@ import Tags from "./_components/tags";
 
 export default function Index() {
   const [recordingVisible, setRecordingVisible] = useState(false);
+  const transcribingNote = useNotesStore((state) => state.transcribingNote);
 
   return (
     <Container>
@@ -22,6 +25,7 @@ export default function Index() {
         <Tags />
       </View>
       <View style={styles.notesContainer}>
+        {transcribingNote && <AddNote duration={transcribingNote.duration} />}
         <Notes />
       </View>
       <BottomNav onRecord={() => setRecordingVisible(true)} />
@@ -44,5 +48,7 @@ const styles = StyleSheet.create({
   },
   notesContainer: {
     flex: 1,
+    flexDirection: "column",
+    gap: 4,
   },
 });

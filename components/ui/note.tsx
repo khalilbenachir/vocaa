@@ -46,9 +46,11 @@ const Note = ({
           {title}
         </Text>
         <View style={styles.metaContainer}>
-          <Text style={styles.metaText}>{formatDate(date)}</Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={styles.metaText}>{formatDuration(duration)}</Text>
+          <>
+            <Text style={styles.metaText}>{formatDate(date)}</Text>
+            <Text style={styles.dot}>•</Text>
+            <Text style={styles.metaText}>{formatDuration(duration)}</Text>
+          </>
         </View>
       </View>
 

@@ -1,6 +1,6 @@
 {
   "header": {
-    "text1": "Vocaa",
+    "text1": "Vocaa AI",
     "text2": "PRO"
   },
   "search": {
@@ -23,5 +23,13 @@
     "newRecord": "New record",
     "delete": "Delete",
     "done": "Done"
+  },
+  "notes": {
+    "creatingNote": "We're creating your note",
+    "transcribed": "Voice note",
+    "minutesLeft": {
+      "one": "%{count} minute left...",
+      "other": "%{count} minutes left..."
+    }
   }
 }

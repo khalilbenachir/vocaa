@@ -2,77 +2,28 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import React from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
+import { useShallow } from "zustand/react/shallow";
+
+import Note from "@/components/ui/note";
+import { useNotesStore } from "@/stores/use-notes-store";
 import { colors } from "../../theme/colors";
-import Note from "./note";
-
-interface MockNote {
-  id: string;
-  title: string;
-  date: Date;
-  duration: number;
-  iconBackgroundColor: string;
-  iconColor: string;
-  iconBorderColor: string;
-}
-
-const mockNotes: MockNote[] = [
-  {
-    id: "1",
-    title: "Team Meeting Notes",
-    date: new Date(2025, 2, 14), // Mar 14, 2025
-    duration: 121, // 2m 1s
-    iconBackgroundColor: colors.purpleLighter,
-    iconColor: colors.purple,
-    iconBorderColor: colors.purpleLight,
-  },
-  {
-    id: "2",
-    title: "Project Ideas and Planning Session for Next Quarter",
-    date: new Date(2025, 2, 13),
-    duration: 305, // 5m 5s
-    iconColor: colors.orange,
-    iconBackgroundColor: colors.orangeLighter,
-    iconBorderColor: colors.orangeLight,
-  },
-  {
-    id: "3",
-    title: "Daily Standup",
-    date: new Date(2025, 2, 12),
-    duration: 78, // 1m 18s
-    iconColor: colors.blue,
-    iconBackgroundColor: colors.blueLighter,
-    iconBorderColor: colors.blueLight,
-  },
-  {
-    id: "4",
-    title: "Brainstorming New Features",
-    date: new Date(2025, 2, 11),
-    duration: 245, // 4m 5s
-    iconColor: colors.purple,
-    iconBackgroundColor: colors.purpleLighter,
-    iconBorderColor: colors.purpleLight,
-  },
-  {
-    id: "5",
-    title: "Client Feedback Review",
-    date: new Date(2025, 2, 10),
-    duration: 190, // 3m 10s
-    iconColor: colors.orange,
-    iconBackgroundColor: colors.orangeLighter,
-    iconBorderColor: colors.blueLight,
-  },
-];
 
 const Notes = () => {
+  const notes = useNotesStore(
+    useShallow((state) =>
+      [...state.notes].sort((a, b) => b.date.getTime() - a.date.getTime()),
+    ),
+  );
+
   return (
     <FlatList
-      data={mockNotes}
+      data={notes}
       keyExtractor={(item, index) => `${item.id}-${index}`}
       renderItem={({ item }) => (
         <Note
           icon={() => (
             <MaterialCommunityIcons
-              name="microphone"
+              name={(item.iconName || "microphone") as any}
               size={24}
               color={item.iconColor}
             />
