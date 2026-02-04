@@ -1,8 +1,8 @@
-import i18n from "@/i18n";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 
+import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
 
 export default function SearchInput() {

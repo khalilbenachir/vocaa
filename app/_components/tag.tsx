@@ -1,13 +1,13 @@
 import React from "react";
 import {
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { colors } from "@/theme/colors";
 
 type TagVariant = "contained" | "outlined";
 

@@ -1,11 +1,16 @@
+import { useNotesStore } from "@/features/notes/stores/use-notes-store";
+import { useRecordingStore } from "@/features/recording/stores/use-recording-store";
 import i18n from "@/i18n";
-import { useNotesStore } from "@/stores/use-notes-store";
-import { useRecordingStore } from "@/stores/use-recording-store";
 import { colors } from "@/theme/colors";
 
 export function useRecordingActions(onClose: () => void) {
-  const { isPaused, pauseRecording, resumeRecording, stopRecording, deleteRecording } =
-    useRecordingStore();
+  const {
+    isPaused,
+    pauseRecording,
+    resumeRecording,
+    stopRecording,
+    deleteRecording,
+  } = useRecordingStore();
   const { startTranscription } = useNotesStore();
 
   const handleDelete = async () => {

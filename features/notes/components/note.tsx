@@ -3,7 +3,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { formatDate, formatDuration } from "@/lib/date";
-import { colors } from "../../theme/colors";
+import { colors } from "@/theme/colors";
 
 interface NoteProps {
   icon?: React.ComponentType;

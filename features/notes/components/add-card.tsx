@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 
 import i18n from "@/i18n";
-import { colors } from "../../theme/colors";
+import { colors } from "@/theme/colors";
 
 interface AddNoteProps {
   duration: number; // in seconds

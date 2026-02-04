@@ -4,9 +4,9 @@ import { StyleSheet, View } from "react-native";
 import Container from "@/components/ui/container";
 import { colors } from "@/theme/colors";
 
-import RecordingSheet from "@/components/recording-sheet/recording-sheet";
-import AddNote from "@/components/ui/add-card";
-import { useNotesStore } from "@/stores/use-notes-store";
+import AddNote from "@/features/notes/components/add-card";
+import { useNotesStore } from "@/features/notes/stores/use-notes-store";
+import RecordingSheet from "@/features/recording/components/recording-sheet/recording-sheet";
 import BottomNav from "./_components/bottom-nav";
 import Header from "./_components/header";
 import Notes from "./_components/notes";

@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
-import { Note } from "@/types";
+import { Note } from "../types";
 
 const COLOR_PALETTE = [
   {

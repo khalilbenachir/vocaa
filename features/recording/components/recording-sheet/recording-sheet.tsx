@@ -13,8 +13,8 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import i18n from "@/i18n";
-import { useRecordingStore } from "@/stores/use-recording-store";
 import { colors } from "@/theme/colors";
+import { useRecordingStore } from "../../stores/use-recording-store";
 import { useRecordingActions } from "./hooks/use-recording-actions";
 import { useRecordingAnimation } from "./hooks/use-recording-animation";
 import Waveform from "./waveform";

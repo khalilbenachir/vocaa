@@ -2,8 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import i18n from "@/i18n";
-import { colors } from "@/theme/colors";
+import i18n from "../../i18n";
+import { colors } from "../../theme/colors";
 
 interface BottomNavProps {
   onRecord: () => void;

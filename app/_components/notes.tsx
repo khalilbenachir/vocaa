@@ -4,9 +4,9 @@ import { FlatList, StyleSheet, View } from "react-native";
 
 import { useShallow } from "zustand/react/shallow";
 
-import Note from "@/components/ui/note";
-import { useNotesStore } from "@/stores/use-notes-store";
-import { colors } from "../../theme/colors";
+import Note from "@/features/notes/components/note";
+import { useNotesStore } from "@/features/notes/stores/use-notes-store";
+import { colors } from "@/theme/colors";
 
 const Notes = () => {
   const notes = useNotesStore(
