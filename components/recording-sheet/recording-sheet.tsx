@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import React, { useEffect } from "react";
 import {
+  GestureResponderEvent,
   Modal,
   Pressable,
   StyleSheet,
@@ -12,13 +13,11 @@ import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import i18n from "@/i18n";
-import { colors } from "@/theme/colors";
-import {
-  useRecordingAnimation,
-  useWaveformAnimation,
-} from "./use-recording-animation";
-
 import { useRecordingStore } from "@/stores/use-recording-store";
+import { colors } from "@/theme/colors";
+import { useRecordingActions } from "./hooks/use-recording-actions";
+import { useRecordingAnimation } from "./hooks/use-recording-animation";
+import Waveform from "./waveform";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -41,11 +40,10 @@ export default function RecordingSheet({
     duration,
     metering,
     startRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
     deleteRecording,
   } = useRecordingStore();
+  const { handleDelete, handlePause, handleDone } =
+    useRecordingActions(onClose);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,25 +52,6 @@ export default function RecordingSheet({
       deleteRecording();
     }
   }, [isOpen, startRecording, deleteRecording]);
-
-  const handleDelete = async () => {
-    await deleteRecording();
-    onClose();
-  };
-
-  const handlePause = async () => {
-    if (isPaused) {
-      await resumeRecording();
-    } else {
-      await pauseRecording();
-    }
-  };
-
-  const handleDone = async () => {
-    await stopRecording();
-    onClose();
-    // Navigate to next screen or do something with the URI
-  };
 
   if (!isVisible && !isOpen) return null;
 
@@ -93,7 +72,7 @@ export default function RecordingSheet({
             sheetStyle,
             { paddingBottom: insets.bottom + 28 },
           ]}
-          onPress={(e) => e.stopPropagation()}
+          onPress={(e: GestureResponderEvent) => e.stopPropagation()}
         >
           <View style={styles.handleRow}>
             <View style={styles.handle} />
@@ -140,64 +119,6 @@ export default function RecordingSheet({
         </AnimatedPressable>
       </AnimatedPressable>
     </Modal>
-  );
-}
-
-function Waveform({
-  isRecording,
-  metering,
-}: {
-  isRecording: boolean;
-  metering: number;
-}) {
-  // Create a fixed number of bars
-  const barCount = 40;
-  const bars = Array.from({ length: barCount }, (_, i) => i);
-
-  return (
-    <View style={styles.waveform}>
-      {bars.map((i) => (
-        <WaveformBar
-          key={i}
-          index={i}
-          total={barCount}
-          isRecording={isRecording}
-          metering={metering}
-        />
-      ))}
-      <View style={styles.playhead} />
-    </View>
-  );
-}
-
-function WaveformBar({
-  index,
-  total,
-  isRecording,
-  metering,
-}: {
-  index: number;
-  total: number;
-  isRecording: boolean;
-  metering: number;
-}) {
-  const animatedStyle = useWaveformAnimation(
-    metering,
-    index,
-    total,
-    isRecording,
-  );
-
-  return (
-    <Animated.View
-      style={[
-        styles.bar,
-        animatedStyle,
-        {
-          opacity: 0.3 + (index / total) * 0.7,
-        },
-      ]}
-    />
   );
 }
 
@@ -253,26 +174,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.primaryLight,
     marginTop: 4,
-  },
-  waveform: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 56,
-    marginTop: 40,
-    marginBottom: 40,
-  },
-  bar: {
-    width: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.primary,
-    marginHorizontal: 1,
-  },
-  playhead: {
-    width: 2,
-    height: 44,
-    backgroundColor: colors.blue,
-    marginLeft: 3,
   },
   actions: {
     flexDirection: "row",

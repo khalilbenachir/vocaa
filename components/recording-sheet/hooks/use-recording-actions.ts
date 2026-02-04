@@ -1,0 +1,44 @@
+import i18n from "@/i18n";
+import { useNotesStore } from "@/stores/use-notes-store";
+import { useRecordingStore } from "@/stores/use-recording-store";
+import { colors } from "@/theme/colors";
+
+export function useRecordingActions(onClose: () => void) {
+  const { isPaused, pauseRecording, resumeRecording, stopRecording, deleteRecording } =
+    useRecordingStore();
+  const { startTranscription } = useNotesStore();
+
+  const handleDelete = async () => {
+    await deleteRecording();
+    onClose();
+  };
+
+  const handlePause = async () => {
+    if (isPaused) {
+      await resumeRecording();
+    } else {
+      await pauseRecording();
+    }
+  };
+
+  const handleDone = async () => {
+    await stopRecording();
+
+    const { recordingUri, duration: durationMs } = useRecordingStore.getState();
+
+    startTranscription({
+      id: Date.now().toString(),
+      title: i18n.t("notes.creatingNote"),
+      date: new Date(),
+      duration: Math.round(durationMs / 1000),
+      audioUri: recordingUri,
+      iconColor: colors.primary,
+      iconBackgroundColor: colors.primary,
+      iconBorderColor: colors.primary,
+    });
+
+    onClose();
+  };
+
+  return { handleDelete, handlePause, handleDone };
+}

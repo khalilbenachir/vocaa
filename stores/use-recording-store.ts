@@ -42,7 +42,6 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
     set({ isStarting: true });
 
     try {
-      // Cleanup existing recorder if any
       const { recorder: existingRecorder, timerInterval: existingTimer } =
         get();
       if (existingRecorder) {
@@ -62,33 +61,26 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
         return;
       }
 
-      // Configure audio mode for iOS
       await setAudioModeAsync({
         allowsRecording: true,
         playsInSilentMode: true,
       });
 
-      // Create new recorder
       // eslint-disable-next-line import/namespace
       const recorder = new AudioModule.AudioRecorder(
         RecordingPresets.HIGH_QUALITY,
       );
 
-      // Prepare settings - expo-audio handles this in constructor or record() or prepareToRecordAsync()
-      // `prepareToRecordAsync` exists.
       await recorder.prepareToRecordAsync({
         ...RecordingPresets.HIGH_QUALITY,
         isMeteringEnabled: true,
       });
 
-      // Start recording
       recorder.record();
 
-      // Start timer
       const interval = setInterval(() => {
         const { recorder } = get();
         if (recorder) {
-          // getStatus() is synchronous and returns RecorderState
           const status = recorder.getStatus();
           if (status.isRecording) {
             set((state) => ({
@@ -126,10 +118,7 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
   resumeRecording: async () => {
     const { recorder } = get();
     if (recorder) {
-      recorder.record(); // record() resumes if paused? Or starts new?
-      // "Starts the recording." - often implies resume if paused.
-      // IOS AVAudioRecorder record() resumes.
-      // Let's assume record() works.
+      recorder.record();
 
       const interval = setInterval(() => {
         const { recorder } = get();
@@ -153,7 +142,7 @@ export const useRecordingStore = create<RecordingState>((set, get) => ({
     if (recorder) {
       if (timerInterval) clearInterval(timerInterval);
       await recorder.stop();
-      const uri = recorder.uri; // Property access
+      const uri = recorder.uri;
       set({
         isRecording: false,
         isPaused: false,
