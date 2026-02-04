@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import Container from "@/components/ui/container";
 import { colors } from "@/theme/colors";
 
+import RecordingSheet from "@/components/recording-sheet/recording-sheet";
 import BottomNav from "./_components/bottom-nav";
 import Header from "./_components/header";
 import Notes from "./_components/notes";
@@ -10,6 +12,8 @@ import SearchInput from "./_components/search-input";
 import Tags from "./_components/tags";
 
 export default function Index() {
+  const [recordingVisible, setRecordingVisible] = useState(false);
+
   return (
     <Container>
       <Header />
@@ -20,7 +24,11 @@ export default function Index() {
       <View style={styles.notesContainer}>
         <Notes />
       </View>
-      <BottomNav />
+      <BottomNav onRecord={() => setRecordingVisible(true)} />
+      <RecordingSheet
+        isOpen={recordingVisible}
+        onClose={() => setRecordingVisible(false)}
+      />
     </Container>
   );
 }

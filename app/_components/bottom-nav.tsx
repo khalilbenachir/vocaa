@@ -5,9 +5,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
 
-export default function BottomNav() {
+interface BottomNavProps {
+  onRecord: () => void;
+}
+
+export default function BottomNav({ onRecord }: BottomNavProps) {
   const onAddNote = () => {};
-  const onRecord = () => {};
 
   return (
     <View style={styles.container}>

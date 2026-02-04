@@ -5,6 +5,7 @@ export const colors = {
   primaryLight: "#666666",
   primaryLighter: "#999999",
   secondary: "#ececed",
+  backdrop: "#00000066",
 
   // Purple
   purple: "#6c73ef",

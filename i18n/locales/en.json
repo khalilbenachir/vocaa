@@ -16,5 +16,12 @@
   "bottomNav": {
     "addNote": "Add note",
     "record": "Record"
+  },
+  "recording": {
+    "recording": "Recording ...",
+    "paused": "Paused",
+    "newRecord": "New record",
+    "delete": "Delete",
+    "done": "Done"
   }
 }
