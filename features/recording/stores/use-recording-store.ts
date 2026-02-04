@@ -15,6 +15,12 @@ interface RecordingState {
   metering: number;
   recordingUri: string | null;
 
+  // Transcription State
+  transcript: string | null;
+  generatedTitle: string | null;
+  isProcessingTitle: boolean; // True while generating the 10s title
+  isTranscribing: boolean; // True while generating the final transcript
+
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
   pauseRecording: () => Promise<void>;
@@ -36,10 +42,13 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
     // Consider 50ms (20fps) or 16ms (60fps) for smoother waveforms
     timerInterval = setInterval(() => {
       if (recorderInstance?.getStatus().isRecording) {
+        const status = recorderInstance.getStatus();
         set({
-          duration: recorderInstance.getStatus().durationMillis,
-          metering: recorderInstance.getStatus().metering ?? -160,
+          duration: status.durationMillis,
+          metering: status.metering ?? -160,
         });
+
+        // Trigger Title Generation at 10 seconds (10000ms) - DISABLED
       }
     }, 100);
   };
@@ -58,6 +67,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
     duration: 0,
     metering: -160,
     recordingUri: null,
+    transcript: null,
+    generatedTitle: null,
+    isProcessingTitle: false,
+    isTranscribing: false,
 
     startRecording: async () => {
       const { isStarting, isRecording } = get();
@@ -108,6 +121,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
           isStarting: false,
           duration: 0,
           recordingUri: null,
+          transcript: null,
+          generatedTitle: null,
+          isProcessingTitle: false,
+          isTranscribing: false,
         });
       } catch (err) {
         console.error("Failed to start recording", err);
@@ -148,12 +165,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
     deleteRecording: async () => {
       if (recorderInstance) {
         stopPolling();
-        // Check if recording or not before stopping?
-        // stop() is usually safe or we can try/catch
         try {
           await recorderInstance.stop();
         } catch (e) {
-          // ignore if already stopped
+          // ignore
         }
         recorderInstance = null;
       }
@@ -163,6 +178,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
         duration: 0,
         metering: -160,
         recordingUri: null,
+        transcript: null,
+        generatedTitle: null,
+        isProcessingTitle: false,
+        isTranscribing: false,
       });
     },
 
@@ -175,6 +194,10 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
         duration: 0,
         metering: -160,
         recordingUri: null,
+        transcript: null,
+        generatedTitle: null,
+        isProcessingTitle: false,
+        isTranscribing: false,
       });
     },
   };

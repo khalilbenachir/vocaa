@@ -1,3 +1,9 @@
+export type NoteStatus =
+  | "pending" // Just created, waiting to process
+  | "transcribing" // Currently being transcribed
+  | "completed" // Successfully transcribed
+  | "failed"; // Transcription failed, can retry
+
 export interface Note {
   id: string;
   title: string;
@@ -8,4 +14,8 @@ export interface Note {
   iconColor: string;
   iconBorderColor: string;
   iconName?: string;
+  transcript?: string;
+  status?: NoteStatus;
+  error?: string;
+  retryCount?: number;
 }

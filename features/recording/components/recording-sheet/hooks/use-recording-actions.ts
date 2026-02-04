@@ -29,12 +29,16 @@ export function useRecordingActions(onClose: () => void) {
   const handleDone = async () => {
     await stopRecording();
 
-    const { recordingUri, duration: durationMs } = useRecordingStore.getState();
+    const {
+      recordingUri,
+      duration: durationMs,
+      generatedTitle,
+    } = useRecordingStore.getState();
 
     // Fire and forget - processRecording runs async in the background
     processRecording({
       id: Date.now().toString(),
-      title: i18n.t("notes.creatingNote"),
+      title: generatedTitle || i18n.t("notes.creatingNote"),
       date: new Date(),
       duration: Math.round(durationMs / 1000),
       audioUri: recordingUri,

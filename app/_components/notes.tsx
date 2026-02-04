@@ -4,6 +4,7 @@ import { FlatList, StyleSheet, View } from "react-native";
 
 import { useShallow } from "zustand/react/shallow";
 
+import FailedNote from "@/features/notes/components/failed-note";
 import Note from "@/features/notes/components/note";
 import { useNotesStore } from "@/features/notes/stores/use-notes-store";
 import { colors } from "@/theme/colors";
@@ -14,28 +15,46 @@ const Notes = () => {
       [...state.notes].sort((a, b) => b.date.getTime() - a.date.getTime()),
     ),
   );
+  const retryTranscription = useNotesStore((state) => state.retryTranscription);
 
   return (
     <FlatList
       data={notes}
       keyExtractor={(item, index) => `${item.id}-${index}`}
-      renderItem={({ item }) => (
-        <Note
-          icon={() => (
-            <MaterialCommunityIcons
-              name={(item.iconName || "microphone") as any}
-              size={24}
-              color={item.iconColor}
+      renderItem={({ item }) => {
+        if (item.status === "failed") {
+          return (
+            <FailedNote
+              title={item.title}
+              date={item.date}
+              duration={item.duration}
+              error={item.error}
+              onRetry={() => retryTranscription(item.id)}
+              iconColor={item.iconColor}
+              iconBackgroundColor={item.iconBackgroundColor}
+              iconBorderColor={item.iconBorderColor}
             />
-          )}
-          iconBackgroundColor={item.iconBackgroundColor}
-          iconBorderColor={item.iconBorderColor}
-          title={item.title}
-          date={item.date}
-          duration={item.duration}
-          onPress={() => console.log("Note pressed:", item.id)}
-        />
-      )}
+          );
+        }
+
+        return (
+          <Note
+            icon={() => (
+              <MaterialCommunityIcons
+                name={(item.iconName || "microphone") as any}
+                size={24}
+                color={item.iconColor}
+              />
+            )}
+            iconBackgroundColor={item.iconBackgroundColor}
+            iconBorderColor={item.iconBorderColor}
+            title={item.title}
+            date={item.date}
+            duration={item.duration}
+            onPress={() => console.log("Note pressed:", item.id)}
+          />
+        );
+      }}
       ItemSeparatorComponent={() => <View style={styles.divider} />}
       contentContainerStyle={styles.listContainer}
       style={styles.list}

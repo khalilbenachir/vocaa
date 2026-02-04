@@ -41,6 +41,8 @@ export default function RecordingSheet({
     metering,
     startRecording,
     deleteRecording,
+    generatedTitle,
+    isProcessingTitle,
   } = useRecordingStore();
   const { handleDelete, handlePause, handleDone } =
     useRecordingActions(onClose);
@@ -84,7 +86,11 @@ export default function RecordingSheet({
               : i18n.t("recording.recording")}
           </Text>
 
-          <Text style={styles.title}>{i18n.t("recording.newRecord")}</Text>
+          <Text style={styles.title}>
+            {isProcessingTitle
+              ? "..."
+              : generatedTitle || i18n.t("recording.newRecord")}
+          </Text>
 
           <Text style={styles.timer}>{formatTime(duration)}</Text>
 

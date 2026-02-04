@@ -1,8 +1,16 @@
+import { Alert } from "react-native";
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
-import { Note } from "../types";
+import * as FileSystem from "expo-file-system/legacy";
+import { TranscriptionService } from "../../../lib/services/openai";
+import { zustandStorage } from "../../../lib/storage/async-storage";
+import { Note, NoteStatus } from "../types/index";
+
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff: 1s, 2s, 4s
 
 const COLOR_PALETTE = [
   {
@@ -36,6 +44,7 @@ const initialNotes: Note[] = [
     iconBackgroundColor: colors.purpleLighter,
     iconColor: colors.purple,
     iconBorderColor: colors.purpleLight,
+    status: "completed",
   },
   {
     id: "2",
@@ -46,6 +55,7 @@ const initialNotes: Note[] = [
     iconColor: colors.orange,
     iconBackgroundColor: colors.orangeLighter,
     iconBorderColor: colors.orangeLight,
+    status: "completed",
   },
   {
     id: "3",
@@ -56,6 +66,7 @@ const initialNotes: Note[] = [
     iconColor: colors.blue,
     iconBackgroundColor: colors.blueLighter,
     iconBorderColor: colors.blueLight,
+    status: "completed",
   },
   {
     id: "4",
@@ -66,6 +77,7 @@ const initialNotes: Note[] = [
     iconColor: colors.purple,
     iconBackgroundColor: colors.purpleLighter,
     iconBorderColor: colors.purpleLight,
+    status: "completed",
   },
   {
     id: "5",
@@ -76,6 +88,7 @@ const initialNotes: Note[] = [
     iconColor: colors.orange,
     iconBackgroundColor: colors.orangeLighter,
     iconBorderColor: colors.blueLight,
+    status: "completed",
   },
 ];
 
@@ -84,47 +97,289 @@ interface NotesState {
   transcribingNote: Note | null;
   addNote: (note: Note) => void;
   processRecording: (note: Note) => Promise<void>;
+  retryTranscription: (noteId: string) => Promise<void>;
+  updateNoteStatus: (
+    noteId: string,
+    status: NoteStatus,
+    error?: string,
+  ) => void;
+  getFailedNotes: () => Note[];
+  retryAllFailed: () => Promise<void>;
 }
 
-export const useNotesStore = create<NotesState>((set, get) => ({
-  notes: initialNotes,
-  transcribingNote: null,
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  addNote: (note: Note) =>
-    set((state) => ({
-      notes: [note, ...state.notes],
-    })),
+export const useNotesStore = create<NotesState>()(
+  persist(
+    (set, get) => ({
+      notes: initialNotes,
+      transcribingNote: null,
 
-  processRecording: async (draftNote: Note) => {
-    set({ transcribingNote: draftNote });
+      addNote: (note: Note) =>
+        set((state) => ({
+          notes: [note, ...state.notes],
+        })),
 
-    try {
-      // TODO: Replace with real transcription API call
-      // Simulates transcription completing after a delay
-      const simulatedDelay = Math.min(draftNote.duration * 1000, 8000);
-      await new Promise((resolve) => setTimeout(resolve, simulatedDelay));
+      updateNoteStatus: (noteId: string, status: NoteStatus, error?: string) =>
+        set((state) => ({
+          notes: state.notes.map((n) =>
+            n.id === noteId ? { ...n, status, error } : n,
+          ),
+        })),
 
-      const { notes } = get();
-      const colorIndex = notes.length % COLOR_PALETTE.length;
-      const { iconColor, iconBackgroundColor, iconBorderColor } =
-        COLOR_PALETTE[colorIndex];
+      getFailedNotes: () => {
+        return get().notes.filter((n) => n.status === "failed");
+      },
 
-      const completedNote: Note = {
-        ...draftNote,
-        title: i18n.t("notes.transcribed"),
-        iconColor,
-        iconBackgroundColor,
-        iconBorderColor,
-      };
+      processRecording: async (draftNote: Note) => {
+        const noteWithStatus: Note = {
+          ...draftNote,
+          status: "pending" as NoteStatus,
+          retryCount: 0,
+        };
 
-      set((state) => ({
-        notes: [completedNote, ...state.notes],
-        transcribingNote: null,
-      }));
-    } catch (error) {
-      console.error("Transcription failed", error);
-      set({ transcribingNote: null });
-      // Optionally handle error state here
-    }
-  },
-}));
+        // 1. Add the note immediately (Optimistic Update)
+        set((state) => ({
+          notes: [noteWithStatus, ...state.notes],
+          transcribingNote: noteWithStatus,
+        }));
+
+        if (!draftNote.audioUri) {
+          set((state) => ({
+            notes: state.notes.map((n) =>
+              n.id === draftNote.id
+                ? { ...n, status: "completed" as NoteStatus }
+                : n,
+            ),
+            transcribingNote: null,
+          }));
+          return;
+        }
+
+        // 1.5 Persist Audio File (Move from Cache to Documents)
+        let permanentUri = draftNote.audioUri;
+        try {
+          const fileName = `recording-${draftNote.id}.m4a`;
+          const newPath = `${FileSystem.documentDirectory}${fileName}`;
+
+          // Check if file exists before moving/copying
+          const info = await FileSystem.getInfoAsync(draftNote.audioUri);
+          if (info.exists) {
+            await FileSystem.copyAsync({
+              from: draftNote.audioUri,
+              to: newPath,
+            });
+            permanentUri = newPath;
+
+            // Update the note immediately with the new URI
+            set((state) => ({
+              notes: state.notes.map((n) =>
+                n.id === draftNote.id ? { ...n, audioUri: permanentUri } : n,
+              ),
+              transcribingNote: { ...draftNote, audioUri: permanentUri },
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to persist audio file:", error);
+        }
+
+        // Update status to transcribing
+        set((state) => ({
+          notes: state.notes.map((n) =>
+            n.id === draftNote.id
+              ? { ...n, status: "transcribing" as NoteStatus }
+              : n,
+          ),
+        }));
+
+        // Attempt transcription with retry logic
+        await get().retryTranscription(draftNote.id);
+      },
+
+      retryTranscription: async (noteId: string) => {
+        const note = get().notes.find((n) => n.id === noteId);
+        if (!note || !note.audioUri) {
+          set({ transcribingNote: null });
+          return;
+        }
+
+        const currentRetryCount = note.retryCount ?? 0;
+
+        // Update status to transcribing
+        set((state) => ({
+          notes: state.notes.map((n) =>
+            n.id === noteId
+              ? { ...n, status: "transcribing" as NoteStatus, error: undefined }
+              : n,
+          ),
+          transcribingNote: note,
+        }));
+
+        try {
+          // 2. Transcribe - returns both text and detected language
+          const { text: transcript, language } =
+            await TranscriptionService.transcribeAudio(note.audioUri);
+
+          // 3. Update the note with transcript
+          set((state) => ({
+            notes: state.notes.map((n) =>
+              n.id === noteId
+                ? {
+                    ...n,
+                    transcript,
+                    status: "completed" as NoteStatus,
+                    error: undefined,
+                  }
+                : n,
+            ),
+          }));
+
+          // 4. If title was "Creating Note...", generate one now
+          const isDefaultTitle = note.title === i18n.t("notes.creatingNote");
+
+          if (isDefaultTitle) {
+            // Pass the detected language to ensure title matches
+            const newTitle = await TranscriptionService.generateTitle(
+              transcript,
+              language,
+            );
+            set((state) => ({
+              notes: state.notes.map((n) =>
+                n.id === noteId ? { ...n, title: newTitle } : n,
+              ),
+            }));
+          }
+
+          set({ transcribingNote: null });
+        } catch (error: any) {
+          console.error("Transcription failed", error);
+
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          const isQuotaError =
+            errorMessage.includes("quota") ||
+            errorMessage.includes("billing");
+
+          // Don't retry quota errors
+          if (isQuotaError) {
+            set((state) => ({
+              notes: state.notes.map((n) =>
+                n.id === noteId
+                  ? {
+                      ...n,
+                      status: "failed" as NoteStatus,
+                      error: "API quota exceeded",
+                    }
+                  : n,
+              ),
+              transcribingNote: null,
+            }));
+
+            Alert.alert(
+              "Transcription Limit Reached",
+              "You have exceeded your OpenAI API quota. The audio has been saved, but no text was generated. You can retry later.",
+            );
+            return;
+          }
+
+          // Check if we should retry
+          if (currentRetryCount < MAX_RETRY_ATTEMPTS) {
+            const retryDelay = RETRY_DELAYS[currentRetryCount] ?? 4000;
+
+            // Update retry count
+            set((state) => ({
+              notes: state.notes.map((n) =>
+                n.id === noteId
+                  ? { ...n, retryCount: currentRetryCount + 1 }
+                  : n,
+              ),
+            }));
+
+            console.log(
+              `Retrying transcription (${currentRetryCount + 1}/${MAX_RETRY_ATTEMPTS}) in ${retryDelay}ms`,
+            );
+            await delay(retryDelay);
+
+            // Retry
+            await get().retryTranscription(noteId);
+          } else {
+            // Max retries reached, mark as failed
+            set((state) => ({
+              notes: state.notes.map((n) =>
+                n.id === noteId
+                  ? {
+                      ...n,
+                      status: "failed" as NoteStatus,
+                      error: errorMessage,
+                    }
+                  : n,
+              ),
+              transcribingNote: null,
+            }));
+          }
+        }
+      },
+
+      retryAllFailed: async () => {
+        const failedNotes = get().getFailedNotes();
+        for (const note of failedNotes) {
+          // Reset retry count before retrying
+          set((state) => ({
+            notes: state.notes.map((n) =>
+              n.id === note.id ? { ...n, retryCount: 0 } : n,
+            ),
+          }));
+          await get().retryTranscription(note.id);
+        }
+      },
+    }),
+    {
+      name: "vocaa-notes-storage",
+      storage: createJSONStorage(() => zustandStorage, {
+        // Custom reviver to handle Date deserialization
+        reviver: (_key, value) => {
+          // Check if value looks like an ISO date string
+          if (
+            typeof value === "string" &&
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
+          ) {
+            return new Date(value);
+          }
+          return value;
+        },
+      }),
+      partialize: (state) => ({
+        // Only persist notes, not transient UI state
+        notes: state.notes,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // After rehydration, check for any notes that were mid-transcription
+        // and mark them as failed so user can retry
+        if (state) {
+          // Ensure dates are Date objects (in case reviver missed them)
+          state.notes = state.notes.map((n) => ({
+            ...n,
+            date: n.date instanceof Date ? n.date : new Date(n.date),
+          }));
+
+          const notesNeedingRetry = state.notes.filter(
+            (n) => n.status === "transcribing" || n.status === "pending",
+          );
+
+          if (notesNeedingRetry.length > 0) {
+            // Mark as failed since the app was closed during transcription
+            state.notes = state.notes.map((n) =>
+              n.status === "transcribing" || n.status === "pending"
+                ? {
+                    ...n,
+                    status: "failed" as NoteStatus,
+                    error: "Transcription interrupted",
+                  }
+                : n,
+            );
+          }
+        }
+      },
+    },
+  ),
+);
