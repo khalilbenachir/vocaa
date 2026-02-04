@@ -14,8 +14,6 @@ interface RecordingState {
   duration: number;
   metering: number;
   recordingUri: string | null;
-  recorder: AudioRecorder | null;
-  timerInterval: ReturnType<typeof setInterval> | null;
 
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
@@ -25,162 +23,159 @@ interface RecordingState {
   reset: () => void;
 }
 
-export const useRecordingStore = create<RecordingState>((set, get) => ({
-  isRecording: false,
-  isPaused: false,
-  isStarting: false,
-  duration: 0,
-  metering: -160,
-  recordingUri: null,
-  recorder: null,
-  timerInterval: null,
+// Keep mutable instances OUTSIDE the reactive state
+// This prevents unnecessary re-renders and proxy overhead
+let recorderInstance: AudioRecorder | null = null;
+let timerInterval: ReturnType<typeof setInterval> | null = null;
 
-  startRecording: async () => {
-    const { isStarting, isRecording } = get();
-    if (isStarting || isRecording) return;
+export const useRecordingStore = create<RecordingState>((set, get) => {
+  // Helper to centralize polling logic
+  const startPolling = () => {
+    if (timerInterval) clearInterval(timerInterval);
 
-    set({ isStarting: true });
-
-    try {
-      const { recorder: existingRecorder, timerInterval: existingTimer } =
-        get();
-      if (existingRecorder) {
-        if (existingTimer) clearInterval(existingTimer);
-        try {
-          if (existingRecorder.isRecording) {
-            await existingRecorder.stop();
-          }
-        } catch (e) {
-          console.warn("Error stopping previous recorder", e);
-        }
+    // Consider 50ms (20fps) or 16ms (60fps) for smoother waveforms
+    timerInterval = setInterval(() => {
+      if (recorderInstance?.getStatus().isRecording) {
+        set({
+          duration: recorderInstance.getStatus().durationMillis,
+          metering: recorderInstance.getStatus().metering ?? -160,
+        });
       }
+    }, 100);
+  };
 
-      const { granted } = await requestRecordingPermissionsAsync();
-      if (!granted) {
+  const stopPolling = () => {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  };
+
+  return {
+    isRecording: false,
+    isPaused: false,
+    isStarting: false,
+    duration: 0,
+    metering: -160,
+    recordingUri: null,
+
+    startRecording: async () => {
+      const { isStarting, isRecording } = get();
+      if (isStarting || isRecording) return;
+
+      set({ isStarting: true });
+
+      try {
+        // Cleanup existing if blindly starting over
+        if (recorderInstance) {
+          stopPolling();
+          try {
+            if (recorderInstance.isRecording) {
+              await recorderInstance.stop();
+            }
+          } catch (e) {
+            console.warn("Error stopping previous recorder", e);
+          }
+        }
+
+        const { granted } = await requestRecordingPermissionsAsync();
+        if (!granted) {
+          set({ isStarting: false });
+          return;
+        }
+
+        await setAudioModeAsync({
+          allowsRecording: true,
+          playsInSilentMode: true,
+        });
+
+        // eslint-disable-next-line import/namespace
+        recorderInstance = new AudioModule.AudioRecorder(
+          RecordingPresets.HIGH_QUALITY,
+        );
+
+        await recorderInstance.prepareToRecordAsync({
+          ...RecordingPresets.HIGH_QUALITY,
+          isMeteringEnabled: true,
+        });
+
+        recorderInstance.record();
+        startPolling();
+
+        set({
+          isRecording: true,
+          isPaused: false,
+          isStarting: false,
+          duration: 0,
+          recordingUri: null,
+        });
+      } catch (err) {
+        console.error("Failed to start recording", err);
         set({ isStarting: false });
-        return;
       }
+    },
 
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
-      });
+    pauseRecording: async () => {
+      if (recorderInstance) {
+        await recorderInstance.pause();
+        stopPolling();
+        set({ isPaused: true, isRecording: false });
+      }
+    },
 
-      // eslint-disable-next-line import/namespace
-      const recorder = new AudioModule.AudioRecorder(
-        RecordingPresets.HIGH_QUALITY,
-      );
+    resumeRecording: async () => {
+      if (recorderInstance) {
+        recorderInstance.record();
+        startPolling();
+        set({ isPaused: false, isRecording: true });
+      }
+    },
 
-      await recorder.prepareToRecordAsync({
-        ...RecordingPresets.HIGH_QUALITY,
-        isMeteringEnabled: true,
-      });
+    stopRecording: async () => {
+      if (recorderInstance) {
+        stopPolling();
+        await recorderInstance.stop();
+        const uri = recorderInstance.uri;
+        recorderInstance = null; // Detach
+        set({
+          isRecording: false,
+          isPaused: false,
+          recordingUri: uri,
+        });
+      }
+    },
 
-      recorder.record();
-
-      const interval = setInterval(() => {
-        const { recorder } = get();
-        if (recorder) {
-          const status = recorder.getStatus();
-          if (status.isRecording) {
-            set((state) => ({
-              duration: status.durationMillis,
-              metering: status.metering ?? -160,
-            }));
-          }
+    deleteRecording: async () => {
+      if (recorderInstance) {
+        stopPolling();
+        // Check if recording or not before stopping?
+        // stop() is usually safe or we can try/catch
+        try {
+          await recorderInstance.stop();
+        } catch (e) {
+          // ignore if already stopped
         }
-      }, 100);
-
-      set({
-        isRecording: true,
-        isPaused: false,
-        recorder,
-        timerInterval: interval,
-        duration: 0,
-        recordingUri: null,
-        isStarting: false,
-      });
-    } catch (err) {
-      console.error("Failed to start recording", err);
-      set({ isStarting: false });
-    }
-  },
-
-  pauseRecording: async () => {
-    const { recorder, timerInterval } = get();
-    if (recorder) {
-      recorder.pause(); // Synchronous in docs? "pause(): void"
-      if (timerInterval) clearInterval(timerInterval);
-      set({ isPaused: true, isRecording: false, timerInterval: null });
-    }
-  },
-
-  resumeRecording: async () => {
-    const { recorder } = get();
-    if (recorder) {
-      recorder.record();
-
-      const interval = setInterval(() => {
-        const { recorder } = get();
-        if (recorder) {
-          const status = recorder.getStatus();
-          if (status.isRecording) {
-            set((state) => ({
-              duration: status.durationMillis,
-              metering: status.metering ?? -160,
-            }));
-          }
-        }
-      }, 100);
-
-      set({ isPaused: false, isRecording: true, timerInterval: interval });
-    }
-  },
-
-  stopRecording: async () => {
-    const { recorder, timerInterval } = get();
-    if (recorder) {
-      if (timerInterval) clearInterval(timerInterval);
-      await recorder.stop();
-      const uri = recorder.uri;
+        recorderInstance = null;
+      }
       set({
         isRecording: false,
         isPaused: false,
-        recorder: null,
-        recordingUri: uri,
-        timerInterval: null,
+        duration: 0,
+        metering: -160,
+        recordingUri: null,
       });
-    }
-  },
+    },
 
-  deleteRecording: async () => {
-    const { recorder, timerInterval } = get();
-    if (recorder) {
-      if (timerInterval) clearInterval(timerInterval);
-      await recorder.stop();
-    }
-    set({
-      isRecording: false,
-      isPaused: false,
-      duration: 0,
-      metering: -160,
-      recorder: null,
-      recordingUri: null,
-      timerInterval: null,
-    });
-  },
-
-  reset: () => {
-    const { timerInterval } = get();
-    if (timerInterval) clearInterval(timerInterval);
-    set({
-      isRecording: false,
-      isPaused: false,
-      duration: 0,
-      metering: -160,
-      recorder: null,
-      recordingUri: null,
-      timerInterval: null,
-    });
-  },
-}));
+    reset: () => {
+      stopPolling();
+      recorderInstance = null;
+      set({
+        isRecording: false,
+        isPaused: false,
+        duration: 0,
+        metering: -160,
+        recordingUri: null,
+      });
+    },
+  };
+});

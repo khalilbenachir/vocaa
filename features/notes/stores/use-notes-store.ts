@@ -83,8 +83,7 @@ interface NotesState {
   notes: Note[];
   transcribingNote: Note | null;
   addNote: (note: Note) => void;
-  startTranscription: (note: Note) => void;
-  completeTranscription: () => void;
+  processRecording: (note: Note) => Promise<void>;
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
@@ -96,39 +95,36 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       notes: [note, ...state.notes],
     })),
 
-  startTranscription: (note: Note) => {
-    set({ transcribingNote: note });
+  processRecording: async (draftNote: Note) => {
+    set({ transcribingNote: draftNote });
 
-    // TODO: Replace with real transcription API call
-    // Simulates transcription completing after a delay
-    const simulatedDelay = Math.min(note.duration * 1000, 8000);
-    setTimeout(() => {
-      get().completeTranscription();
-    }, simulatedDelay);
-  },
+    try {
+      // TODO: Replace with real transcription API call
+      // Simulates transcription completing after a delay
+      const simulatedDelay = Math.min(draftNote.duration * 1000, 8000);
+      await new Promise((resolve) => setTimeout(resolve, simulatedDelay));
 
-  completeTranscription: () => {
-    const { transcribingNote, notes } = get();
-    if (!transcribingNote) return;
+      const { notes } = get();
+      const colorIndex = notes.length % COLOR_PALETTE.length;
+      const { iconColor, iconBackgroundColor, iconBorderColor } =
+        COLOR_PALETTE[colorIndex];
 
-    const colorIndex = notes.length % COLOR_PALETTE.length;
-    const { iconColor, iconBackgroundColor, iconBorderColor } =
-      COLOR_PALETTE[colorIndex];
+      const completedNote: Note = {
+        ...draftNote,
+        title: i18n.t("notes.transcribed"),
+        iconColor,
+        iconBackgroundColor,
+        iconBorderColor,
+      };
 
-    set((state) => ({
-      notes: [
-        {
-          ...transcribingNote,
-          title: i18n.t("notes.transcribed"),
-          subtitle: undefined,
-          iconName: undefined,
-          iconColor,
-          iconBackgroundColor,
-          iconBorderColor,
-        },
-        ...state.notes,
-      ],
-      transcribingNote: null,
-    }));
+      set((state) => ({
+        notes: [completedNote, ...state.notes],
+        transcribingNote: null,
+      }));
+    } catch (error) {
+      console.error("Transcription failed", error);
+      set({ transcribingNote: null });
+      // Optionally handle error state here
+    }
   },
 }));

@@ -11,7 +11,7 @@ export function useRecordingActions(onClose: () => void) {
     stopRecording,
     deleteRecording,
   } = useRecordingStore();
-  const { startTranscription } = useNotesStore();
+  const { processRecording } = useNotesStore();
 
   const handleDelete = async () => {
     await deleteRecording();
@@ -31,7 +31,8 @@ export function useRecordingActions(onClose: () => void) {
 
     const { recordingUri, duration: durationMs } = useRecordingStore.getState();
 
-    startTranscription({
+    // Fire and forget - processRecording runs async in the background
+    processRecording({
       id: Date.now().toString(),
       title: i18n.t("notes.creatingNote"),
       date: new Date(),
