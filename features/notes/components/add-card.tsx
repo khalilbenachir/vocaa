@@ -1,5 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
-import React, { useEffect, useRef } from "react";
+import React, { memo, useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 
 import i18n from "@/i18n";
@@ -14,14 +14,20 @@ const AddNote = ({ duration }: AddNoteProps) => {
   const minutes = Math.max(1, Math.ceil(duration / 60));
 
   useEffect(() => {
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.timing(spin, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
       }),
-    ).start();
-  }, [spin]);
+    );
+    animation.start();
+
+    // Cleanup to prevent memory leaks
+    return () => {
+      animation.stop();
+    };
+  }, [spin]); // spin is a stable ref, included to satisfy linter
 
   const rotation = spin.interpolate({
     inputRange: [0, 1],
@@ -89,4 +95,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddNote;
+export default memo(AddNote);

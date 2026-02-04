@@ -1,56 +1,65 @@
 import Entypo from "@expo/vector-icons/Entypo";
-import React from "react";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import React, { memo, useCallback } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { formatDate, formatDuration } from "@/lib/date";
 import { colors } from "@/theme/colors";
 
 interface NoteProps {
-  icon?: React.ComponentType;
+  id: string;
+  iconName?: string;
+  iconColor?: string;
   iconBackgroundColor?: string;
+  iconBorderColor: string;
   title: string;
   date: Date;
   duration: number; // duration in seconds
-  onPress?: () => void;
-  iconBorderColor: string;
+  onPress?: (id: string) => void;
 }
 
 const Note = ({
-  icon: Icon,
+  id,
+  iconName = "microphone",
+  iconColor,
   iconBackgroundColor = colors.blue,
+  iconBorderColor,
   title,
   date,
   duration,
   onPress,
-  iconBorderColor,
 }: NoteProps) => {
+  const handlePress = useCallback(() => {
+    onPress?.(id);
+  }, [id, onPress]);
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
-      {Icon && (
-        <View
-          style={[
-            styles.iconContainer,
-            {
-              backgroundColor: iconBackgroundColor,
-              borderColor: iconBorderColor,
-              borderStyle: "solid",
-              borderWidth: 1,
-            },
-          ]}
-        >
-          <Icon />
-        </View>
-      )}
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
+      <View
+        style={[
+          styles.iconContainer,
+          {
+            backgroundColor: iconBackgroundColor,
+            borderColor: iconBorderColor,
+            borderStyle: "solid",
+            borderWidth: 1,
+          },
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={iconName as keyof typeof MaterialCommunityIcons.glyphMap}
+          size={24}
+          color={iconColor}
+        />
+      </View>
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
           {title}
         </Text>
         <View style={styles.metaContainer}>
-          <>
-            <Text style={styles.metaText}>{formatDate(date)}</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.metaText}>{formatDuration(duration)}</Text>
-          </>
+          <Text style={styles.metaText}>{formatDate(date)}</Text>
+          <Text style={styles.dot}>•</Text>
+          <Text style={styles.metaText}>{formatDuration(duration)}</Text>
         </View>
       </View>
 
@@ -97,4 +106,17 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Note;
+// Custom comparison for memo - handles Date objects properly
+export default memo(Note, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.title === nextProps.title &&
+    prevProps.date.getTime() === nextProps.date.getTime() &&
+    prevProps.duration === nextProps.duration &&
+    prevProps.iconName === nextProps.iconName &&
+    prevProps.iconColor === nextProps.iconColor &&
+    prevProps.iconBackgroundColor === nextProps.iconBackgroundColor &&
+    prevProps.iconBorderColor === nextProps.iconBorderColor &&
+    prevProps.onPress === nextProps.onPress
+  );
+});

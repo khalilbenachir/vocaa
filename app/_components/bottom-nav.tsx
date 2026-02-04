@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
+import React, { memo, useCallback } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import i18n from "../../i18n";
@@ -9,8 +10,10 @@ interface BottomNavProps {
   onRecord: () => void;
 }
 
-export default function BottomNav({ onRecord }: BottomNavProps) {
-  const onAddNote = () => {};
+function BottomNav({ onRecord }: BottomNavProps) {
+  const onAddNote = useCallback(() => {
+    // Future: add note functionality
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -66,3 +69,5 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+export default memo(BottomNav);

@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import { Alert } from "react-native";
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
@@ -105,6 +106,7 @@ interface NotesState {
   ) => void;
   getFailedNotes: () => Note[];
   retryAllFailed: () => Promise<void>;
+  deleteNote: (noteId: string) => Promise<void>;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -239,8 +241,16 @@ export const useNotesStore = create<NotesState>()(
 
           if (isDefaultTitle) {
             // Pass the detected language to ensure title matches
+            // Optimization: For long recordings (> 2 mins), only use the first ~20 seconds of text
+            // to generate the title. This saves context window and processing time.
+            let titleContext = transcript;
+            if (note.duration && note.duration > 120) {
+              // Approx 300 chars is roughly 20-30 seconds of speech depending on speed
+              titleContext = transcript.slice(0, 300);
+            }
+
             const newTitle = await TranscriptionService.generateTitle(
-              transcript,
+              titleContext,
               language,
             );
             set((state) => ({
@@ -257,8 +267,7 @@ export const useNotesStore = create<NotesState>()(
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           const isQuotaError =
-            errorMessage.includes("quota") ||
-            errorMessage.includes("billing");
+            errorMessage.includes("quota") || errorMessage.includes("billing");
 
           // Don't retry quota errors
           if (isQuotaError) {
@@ -332,6 +341,26 @@ export const useNotesStore = create<NotesState>()(
           await get().retryTranscription(note.id);
         }
       },
+
+      deleteNote: async (noteId: string) => {
+        const note = get().notes.find((n) => n.id === noteId);
+
+        // Clean up audio file if it exists
+        if (note?.audioUri) {
+          try {
+            const info = await FileSystem.getInfoAsync(note.audioUri);
+            if (info.exists) {
+              await FileSystem.deleteAsync(note.audioUri, { idempotent: true });
+            }
+          } catch (error) {
+            console.warn("Failed to delete audio file:", error);
+          }
+        }
+
+        set((state) => ({
+          notes: state.notes.filter((n) => n.id !== noteId),
+        }));
+      },
     }),
     {
       name: "vocaa-notes-storage",
@@ -383,3 +412,15 @@ export const useNotesStore = create<NotesState>()(
     },
   ),
 );
+
+/**
+ * Memoized selector for sorted notes (newest first)
+ * Avoids O(n log n) sort on every render - only recalculates when notes array changes
+ */
+export const useSortedNotes = () => {
+  const notes = useNotesStore((state) => state.notes);
+  return useMemo(
+    () => [...notes].sort((a, b) => b.date.getTime() - a.date.getTime()),
+    [notes],
+  );
+};

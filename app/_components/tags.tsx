@@ -1,16 +1,20 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
 import i18n from "@/i18n";
 import Tag from "./tag";
 
 const Tags = () => {
-  const tags = [
-    { label: i18n.get("tags.text1"), variant: "contained" as const },
-    { label: i18n.get("tags.text2"), variant: "outlined" as const },
-    { label: i18n.get("tags.text3"), variant: "outlined" as const },
-    { label: i18n.get("tags.text4"), variant: "outlined" as const },
-  ];
+  // Memoize tags array to prevent recreation on every render
+  const tags = useMemo(
+    () => [
+      { label: i18n.get("tags.text1"), variant: "contained" as const },
+      { label: i18n.get("tags.text2"), variant: "outlined" as const },
+      { label: i18n.get("tags.text3"), variant: "outlined" as const },
+      { label: i18n.get("tags.text4"), variant: "outlined" as const },
+    ],
+    [],
+  );
 
   return (
     <ScrollView
@@ -31,4 +35,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Tags;
+export default memo(Tags);

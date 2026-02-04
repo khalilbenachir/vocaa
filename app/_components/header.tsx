@@ -1,13 +1,18 @@
 import Feather from "@expo/vector-icons/Feather";
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
 
-export default function Header() {
-  const onClickPro = () => {};
-  const onClickSettings = () => {};
+function Header() {
+  const onClickPro = useCallback(() => {
+    // Future: navigation to pro screen
+  }, []);
+
+  const onClickSettings = useCallback(() => {
+    // Future: navigation to settings
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -60,3 +65,5 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 });
+
+export default memo(Header);

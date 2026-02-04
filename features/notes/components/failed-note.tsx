@@ -1,23 +1,25 @@
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { formatDate, formatDuration } from "@/lib/date";
 import { colors } from "@/theme/colors";
 
 interface FailedNoteProps {
+  id: string;
   title: string;
   date: Date;
   duration: number;
   error?: string;
-  onRetry: () => void;
+  onRetry: (id: string) => void;
   iconColor?: string;
   iconBackgroundColor?: string;
   iconBorderColor?: string;
 }
 
 const FailedNote = ({
+  id,
   title,
   date,
   duration,
@@ -27,6 +29,10 @@ const FailedNote = ({
   iconBackgroundColor = colors.redLighter,
   iconBorderColor = colors.redLight,
 }: FailedNoteProps) => {
+  const handleRetry = useCallback(() => {
+    onRetry(id);
+  }, [id, onRetry]);
+
   return (
     <View style={styles.container}>
       <View
@@ -60,7 +66,7 @@ const FailedNote = ({
           </Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+      <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
         <Feather name="refresh-cw" size={18} color={colors.background} />
         <Text style={styles.retryText}>Retry</Text>
       </TouchableOpacity>
@@ -135,4 +141,17 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FailedNote;
+// Custom comparison for memo - handles Date objects properly
+export default memo(FailedNote, (prevProps, nextProps) => {
+  return (
+    prevProps.id === nextProps.id &&
+    prevProps.title === nextProps.title &&
+    prevProps.date.getTime() === nextProps.date.getTime() &&
+    prevProps.duration === nextProps.duration &&
+    prevProps.error === nextProps.error &&
+    prevProps.iconColor === nextProps.iconColor &&
+    prevProps.iconBackgroundColor === nextProps.iconBackgroundColor &&
+    prevProps.iconBorderColor === nextProps.iconBorderColor &&
+    prevProps.onRetry === nextProps.onRetry
+  );
+});

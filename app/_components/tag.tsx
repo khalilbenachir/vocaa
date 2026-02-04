@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
   StyleSheet,
   Text,
@@ -18,7 +18,7 @@ interface TagProps {
   onPress?: () => void;
 }
 
-export default function Tag({
+function Tag({
   label,
   variant = "contained",
   icon: Icon,
@@ -69,3 +69,5 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 });
+
+export default memo(Tag);
