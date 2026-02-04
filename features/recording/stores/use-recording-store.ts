@@ -6,13 +6,14 @@ import {
   setAudioModeAsync,
 } from "expo-audio";
 import { create } from "zustand";
+import { meteringService } from "../services/metering-service";
 
-interface RecordingState {
+export interface RecordingState {
   isRecording: boolean;
   isPaused: boolean;
   isStarting: boolean;
   duration: number;
-  metering: number;
+  // Metering is now handled via MeteringService/SharedValue
   recordingUri: string | null;
 
   // Transcription State
@@ -39,16 +40,24 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
   const startPolling = () => {
     if (timerInterval) clearInterval(timerInterval);
 
-    // Consider 50ms (20fps) or 16ms (60fps) for smoother waveforms
+    // Update interval: 100ms
     timerInterval = setInterval(() => {
       if (recorderInstance?.getStatus().isRecording) {
         const status = recorderInstance.getStatus();
-        set({
-          duration: status.durationMillis,
-          metering: status.metering ?? -160,
-        });
 
-        // Trigger Title Generation at 10 seconds (10000ms) - DISABLED
+        // 1. Emit metering directly to listeners (UI Thread / SharedValues)
+        // This bypasses the Store and prevents re-renders!
+        meteringService.emit(status.metering ?? -160);
+
+        // 2. Update Duration in Store
+        // We still update this, but components should only subscribe if they need it.
+        // Optimization: Component could use a local timer sync, but for 1s precision
+        // updating every 100ms in store is a bit wasteful but strictly less than 10Hz if we check diff.
+        // Actually, let's only update the store state if the second has changed?
+        // No, for smooth timers we might want it.
+        // Let's keep it simple: Update duration. Components that need it (Timer) will re-render.
+        // Components that DON'T need it (Waveform) won't, because we removed `metering` from store.
+        set({ duration: status.durationMillis });
       }
     }, 100);
   };
@@ -65,7 +74,6 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
     isPaused: false,
     isStarting: false,
     duration: 0,
-    metering: -160,
     recordingUri: null,
     transcript: null,
     generatedTitle: null,
@@ -176,7 +184,6 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
         isRecording: false,
         isPaused: false,
         duration: 0,
-        metering: -160,
         recordingUri: null,
         transcript: null,
         generatedTitle: null,
@@ -192,7 +199,6 @@ export const useRecordingStore = create<RecordingState>((set, get) => {
         isRecording: false,
         isPaused: false,
         duration: 0,
-        metering: -160,
         recordingUri: null,
         transcript: null,
         generatedTitle: null,

@@ -1,22 +1,25 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { SharedValue } from "react-native-reanimated";
 
 import { colors } from "@/theme/colors";
 import { useWaveformAnimation } from "./hooks/use-recording-animation";
 
 const BAR_COUNT = 40;
 
-export default function Waveform({
+// Stable array of bar indices - defined outside component to avoid recreation
+const BAR_INDICES = Array.from({ length: BAR_COUNT }, (_, i) => i);
+
+function Waveform({
   isRecording,
   metering,
 }: {
   isRecording: boolean;
-  metering: number;
+  metering: SharedValue<number>;
 }) {
   return (
     <View style={styles.waveform}>
-      {Array.from({ length: BAR_COUNT }, (_, i) => (
+      {BAR_INDICES.map((i) => (
         <WaveformBar
           key={i}
           index={i}
@@ -30,7 +33,8 @@ export default function Waveform({
   );
 }
 
-function WaveformBar({
+// Memoized WaveformBar - only re-renders when metering or isRecording changes
+const WaveformBar = memo(function WaveformBar({
   index,
   total,
   isRecording,
@@ -39,7 +43,7 @@ function WaveformBar({
   index: number;
   total: number;
   isRecording: boolean;
-  metering: number;
+  metering: SharedValue<number>;
 }) {
   const animatedStyle = useWaveformAnimation(
     metering,
@@ -48,18 +52,11 @@ function WaveformBar({
     isRecording,
   );
 
-  return (
-    <Animated.View
-      style={[
-        styles.bar,
-        animatedStyle,
-        {
-          opacity: 0.3 + (index / total) * 0.7,
-        },
-      ]}
-    />
-  );
-}
+  // Memoize opacity calculation - only changes when index or total changes
+  const opacity = useMemo(() => 0.3 + (index / total) * 0.7, [index, total]);
+
+  return <Animated.View style={[styles.bar, animatedStyle, { opacity }]} />;
+});
 
 const styles = StyleSheet.create({
   waveform: {
@@ -83,3 +80,5 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   },
 });
+
+export default memo(Waveform);

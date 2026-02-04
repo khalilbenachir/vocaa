@@ -14,12 +14,27 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
-import { useRecordingStore } from "../../stores/use-recording-store";
+import {
+  RecordingState,
+  useRecordingStore,
+} from "../../stores/use-recording-store";
+import { useAudioMetering } from "./hooks/use-audio-metering"; // Import the hook
 import { useRecordingActions } from "./hooks/use-recording-actions";
 import { useRecordingAnimation } from "./hooks/use-recording-animation";
 import Waveform from "./waveform";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Granular selectors - defined outside component for stability
+const selectIsRecording = (state: RecordingState) => state.isRecording;
+const selectIsPaused = (state: RecordingState) => state.isPaused;
+const selectDuration = (state: RecordingState) => state.duration;
+// Removed metering selector
+const selectStartRecording = (state: RecordingState) => state.startRecording;
+const selectDeleteRecording = (state: RecordingState) => state.deleteRecording;
+const selectGeneratedTitle = (state: RecordingState) => state.generatedTitle;
+const selectIsProcessingTitle = (state: RecordingState) =>
+  state.isProcessingTitle;
 
 interface RecordingSheetProps {
   isOpen: boolean;
@@ -34,16 +49,18 @@ export default function RecordingSheet({
   const { isVisible, backdropStyle, sheetStyle } =
     useRecordingAnimation(isOpen);
 
-  const {
-    isRecording,
-    isPaused,
-    duration,
-    metering,
-    startRecording,
-    deleteRecording,
-    generatedTitle,
-    isProcessingTitle,
-  } = useRecordingStore();
+  // Use SharedValue for metering (Reanimated UI thread update)
+  const metering = useAudioMetering();
+
+  // Granular subscriptions - only re-render when specific value changes
+  const isRecording = useRecordingStore(selectIsRecording);
+  const isPaused = useRecordingStore(selectIsPaused);
+  const duration = useRecordingStore(selectDuration);
+  // Removed metering store subscription
+  const startRecording = useRecordingStore(selectStartRecording);
+  const deleteRecording = useRecordingStore(selectDeleteRecording);
+  const generatedTitle = useRecordingStore(selectGeneratedTitle);
+  const isProcessingTitle = useRecordingStore(selectIsProcessingTitle);
   const { handleDelete, handlePause, handleDone } =
     useRecordingActions(onClose);
 
@@ -94,6 +111,7 @@ export default function RecordingSheet({
 
           <Text style={styles.timer}>{formatTime(duration)}</Text>
 
+          {/* Pass SharedValue to Waveform */}
           <Waveform
             isRecording={!isPaused && isRecording}
             metering={metering}

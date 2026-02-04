@@ -1,6 +1,7 @@
 // Actually standard fetch works with uri in FormData in React Native.
 
 // Ideally use expo-constants and extra, or .env file with babel-plugin-dotenv
+// TODO: SECURITY RISK - API Key is exposed to client. Move to backend proxy.
 const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
 export interface TranscriptionResult {

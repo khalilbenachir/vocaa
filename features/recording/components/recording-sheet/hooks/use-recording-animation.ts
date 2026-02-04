@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dimensions } from "react-native";
 import {
   Easing,
   runOnJS,
+  SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -58,39 +60,38 @@ export const useRecordingAnimation = (isOpen: boolean) => {
 };
 
 export const useWaveformAnimation = (
-  metering: number,
+  metering: SharedValue<number>,
   index: number,
   total: number,
   isRecording: boolean,
 ) => {
-  const height = useSharedValue(10);
+  // Stable pseudo-random factor based on bar index - computed once per bar
+  const randomFactor = useMemo(() => {
+    const seed = (index * 2654435761) % 2 ** 32;
+    return 0.5 + (seed / 2 ** 32) * 0.5; // Range: 0.5 to 1.0
+  }, [index]);
 
-  useEffect(() => {
-    if (isRecording) {
-      // Normalize metering from -160 (silence) to 0 (loud) -> 0 to 1
-      // Typically speech is around -40 to 0. Noise floor maybe -60.
-      // Let's ensure a floor.
-      const floor = -60;
-      const normalized = Math.max(0, (metering - floor) / (0 - floor));
-
-      // Add some randomness per bar so they don't move in perfect unison
-      // We can use the index to offset the randomness or phase
-      const randomFactor = 0.5 + Math.random(); // 0.5 to 1.5 multiplier?
-      // Or simply: base min height + normalized * max height * random
-
-      const minHeight = 4;
-      const maxHeight = 40;
-
-      const targetHeight = minHeight + normalized * maxHeight * randomFactor;
-
-      height.value = withTiming(targetHeight, {
-        duration: 100, // Match update interval roughly
-        easing: Easing.linear,
-      });
-    } else {
-      height.value = withTiming(4, { duration: 300 });
+  // Derived value reacts to metering changes on UI thread
+  const height = useDerivedValue(() => {
+    if (!isRecording) {
+      return withTiming(4, { duration: 300 });
     }
-  }, [metering, isRecording, height]);
+
+    // Normalize metering from -160 (silence) to 0 (loud) -> 0 to 1
+    const floor = -60;
+    const currentMetering = metering.value;
+    const normalized = Math.max(0, (currentMetering - floor) / (0 - floor));
+
+    const minHeight = 4;
+    const maxHeight = 40;
+
+    const targetHeight = minHeight + normalized * maxHeight * randomFactor;
+
+    return withTiming(targetHeight, {
+      duration: 100,
+      easing: Easing.linear,
+    });
+  }, [isRecording, randomFactor]); // check dependencies carefully
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: height.value,
