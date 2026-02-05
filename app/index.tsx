@@ -4,8 +4,6 @@ import { StyleSheet, View } from "react-native";
 import Container from "@/components/ui/container";
 import { colors } from "@/theme/colors";
 
-import AddNote from "@/features/notes/components/add-card";
-import { useNotesStore } from "@/features/notes/stores/use-notes-store";
 import RecordingSheet from "@/features/recording/components/recording-sheet/recording-sheet";
 import BottomNav from "./_components/bottom-nav";
 import Header from "./_components/header";
@@ -15,7 +13,6 @@ import Tags from "./_components/tags";
 
 export default function Index() {
   const [recordingVisible, setRecordingVisible] = useState(false);
-  const transcribingNote = useNotesStore((state) => state.transcribingNote);
 
   return (
     <Container>
@@ -25,7 +22,6 @@ export default function Index() {
         <Tags />
       </View>
       <View style={styles.notesContainer}>
-        {transcribingNote && <AddNote duration={transcribingNote.duration} />}
         <Notes />
       </View>
       <BottomNav onRecord={() => setRecordingVisible(true)} />

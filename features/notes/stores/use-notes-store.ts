@@ -6,6 +6,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import i18n from "@/i18n";
 import { colors } from "@/theme/colors";
 import * as FileSystem from "expo-file-system/legacy";
+import { CategoryDetectionService } from "../../../lib/services/category-detection";
 import { TranscriptionService } from "../../../lib/services/openai";
 import { zustandStorage } from "../../../lib/storage/async-storage";
 import { Note, NoteStatus } from "../types/index";
@@ -28,6 +29,51 @@ const COLOR_PALETTE = [
     iconColor: colors.blue,
     iconBackgroundColor: colors.blueLighter,
     iconBorderColor: colors.blueLight,
+  },
+  {
+    iconColor: colors.brown,
+    iconBackgroundColor: colors.brownLighter,
+    iconBorderColor: colors.brownLight,
+  },
+  {
+    iconColor: colors.green,
+    iconBackgroundColor: colors.greenLighter,
+    iconBorderColor: colors.greenLight,
+  },
+  {
+    iconColor: colors.cyan,
+    iconBackgroundColor: colors.cyanLighter,
+    iconBorderColor: colors.cyanLight,
+  },
+  {
+    iconColor: colors.pink,
+    iconBackgroundColor: colors.pinkLighter,
+    iconBorderColor: colors.pinkLight,
+  },
+  {
+    iconColor: colors.teal,
+    iconBackgroundColor: colors.tealLighter,
+    iconBorderColor: colors.tealLight,
+  },
+  {
+    iconColor: colors.yellow,
+    iconBackgroundColor: colors.yellowLighter,
+    iconBorderColor: colors.yellowLight,
+  },
+  {
+    iconColor: colors.lime,
+    iconBackgroundColor: colors.limeLighter,
+    iconBorderColor: colors.limeLight,
+  },
+  {
+    iconColor: colors.deepPurple,
+    iconBackgroundColor: colors.deepPurpleLighter,
+    iconBorderColor: colors.deepPurpleLight,
+  },
+  {
+    iconColor: colors.amber,
+    iconBackgroundColor: colors.amberLighter,
+    iconBorderColor: colors.amberLight,
   },
 ];
 
@@ -236,7 +282,11 @@ export const useNotesStore = create<NotesState>()(
           const { text: transcript, language } =
             await TranscriptionService.transcribeAudio(note.audioUri);
 
-          // 3. Update the note with transcript
+          // 3. Detect category and get icon/colors based on transcript
+          const categoryResult =
+            CategoryDetectionService.detectCategory(transcript);
+
+          // 4. Update the note with transcript and category styling
           set((state) => ({
             notes: state.notes.map((n) =>
               n.id === noteId
@@ -245,12 +295,16 @@ export const useNotesStore = create<NotesState>()(
                     transcript,
                     status: "completed" as NoteStatus,
                     error: undefined,
+                    iconName: categoryResult.iconName,
+                    iconColor: categoryResult.iconColor,
+                    iconBackgroundColor: categoryResult.iconBackgroundColor,
+                    iconBorderColor: categoryResult.iconBorderColor,
                   }
                 : n,
             ),
           }));
 
-          // 4. If title was "Creating Note...", generate one now
+          // 5. If title was "Creating Note...", generate one now
           const isDefaultTitle = note.title === i18n.t("notes.creatingNote");
 
           if (isDefaultTitle) {

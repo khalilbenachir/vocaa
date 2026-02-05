@@ -46,4 +46,34 @@ export const colors = {
   indigo: "#120d3a",
   indigoLighter: "#f2f1fd",
   indigoLight: "#bfbcec",
+
+  // Pink
+  pink: "#e91e63",
+  pinkLighter: "#fce4ec",
+  pinkLight: "#f8bbd9",
+
+  // Teal
+  teal: "#009688",
+  tealLighter: "#e0f2f1",
+  tealLight: "#80cbc4",
+
+  // Yellow
+  yellow: "#f9a825",
+  yellowLighter: "#fffde7",
+  yellowLight: "#fff59d",
+
+  // Lime
+  lime: "#7cb342",
+  limeLighter: "#f1f8e9",
+  limeLight: "#c5e1a5",
+
+  // DeepPurple
+  deepPurple: "#673ab7",
+  deepPurpleLighter: "#ede7f6",
+  deepPurpleLight: "#b39ddb",
+
+  // Amber
+  amber: "#ff8f00",
+  amberLighter: "#fff3e0",
+  amberLight: "#ffcc80",
 };

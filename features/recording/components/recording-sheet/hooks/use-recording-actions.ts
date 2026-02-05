@@ -36,15 +36,17 @@ export function useRecordingActions(onClose: () => void) {
     } = useRecordingStore.getState();
 
     // Fire and forget - processRecording runs async in the background
+    // Use neutral colors while transcribing - category detection will update after transcription
     processRecording({
       id: Date.now().toString(),
       title: generatedTitle || i18n.t("notes.creatingNote"),
       date: new Date(),
       duration: Math.round(durationMs / 1000),
       audioUri: recordingUri,
-      iconColor: colors.primary,
-      iconBackgroundColor: colors.primary,
-      iconBorderColor: colors.primary,
+      iconName: "microphone",
+      iconColor: colors.primaryLight,
+      iconBackgroundColor: colors.secondary,
+      iconBorderColor: colors.primaryLighter,
     });
 
     onClose();
