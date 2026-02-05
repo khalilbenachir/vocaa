@@ -91,6 +91,8 @@ const initialNotes: Note[] = [
     iconBackgroundColor: colors.purpleLighter,
     iconColor: colors.purple,
     iconBorderColor: colors.purpleLight,
+    iconName: "calendar-clock",
+    category: "meeting",
     status: "completed",
   },
   {
@@ -99,9 +101,11 @@ const initialNotes: Note[] = [
     date: new Date(2025, 2, 13),
     duration: 305,
     audioUri: null,
-    iconColor: colors.orange,
-    iconBackgroundColor: colors.orangeLighter,
-    iconBorderColor: colors.orangeLight,
+    iconColor: colors.yellow,
+    iconBackgroundColor: colors.yellowLighter,
+    iconBorderColor: colors.yellowLight,
+    iconName: "lightbulb-outline",
+    category: "idea",
     status: "completed",
   },
   {
@@ -110,9 +114,11 @@ const initialNotes: Note[] = [
     date: new Date(2025, 2, 12),
     duration: 78,
     audioUri: null,
-    iconColor: colors.blue,
-    iconBackgroundColor: colors.blueLighter,
-    iconBorderColor: colors.blueLight,
+    iconColor: colors.purple,
+    iconBackgroundColor: colors.purpleLighter,
+    iconBorderColor: colors.purpleLight,
+    iconName: "calendar-clock",
+    category: "meeting",
     status: "completed",
   },
   {
@@ -121,9 +127,11 @@ const initialNotes: Note[] = [
     date: new Date(2025, 2, 11),
     duration: 245,
     audioUri: null,
-    iconColor: colors.purple,
-    iconBackgroundColor: colors.purpleLighter,
-    iconBorderColor: colors.purpleLight,
+    iconColor: colors.yellow,
+    iconBackgroundColor: colors.yellowLighter,
+    iconBorderColor: colors.yellowLight,
+    iconName: "lightbulb-outline",
+    category: "idea",
     status: "completed",
   },
   {
@@ -132,9 +140,11 @@ const initialNotes: Note[] = [
     date: new Date(2025, 2, 10),
     duration: 190,
     audioUri: null,
-    iconColor: colors.orange,
-    iconBackgroundColor: colors.orangeLighter,
-    iconBorderColor: colors.blueLight,
+    iconColor: colors.indigo,
+    iconBackgroundColor: colors.indigoLighter,
+    iconBorderColor: colors.indigoLight,
+    iconName: "briefcase-outline",
+    category: "work",
     status: "completed",
   },
 ];
@@ -142,6 +152,8 @@ const initialNotes: Note[] = [
 interface NotesState {
   notes: Note[];
   transcribingNote: Note | null;
+  selectedCategory: string | null;
+  searchQuery: string;
   addNote: (note: Note) => void;
   processRecording: (note: Note) => Promise<void>;
   retryTranscription: (noteId: string) => Promise<void>;
@@ -157,6 +169,8 @@ interface NotesState {
   getFailedNotes: () => Note[];
   retryAllFailed: () => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
+  setSelectedCategory: (category: string | null) => void;
+  setSearchQuery: (query: string) => void;
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -166,6 +180,13 @@ export const useNotesStore = create<NotesState>()(
     (set, get) => ({
       notes: initialNotes,
       transcribingNote: null,
+      selectedCategory: null,
+      searchQuery: "",
+
+      setSelectedCategory: (category: string | null) =>
+        set({ selectedCategory: category }),
+
+      setSearchQuery: (query: string) => set({ searchQuery: query }),
 
       addNote: (note: Note) =>
         set((state) => ({
@@ -295,6 +316,7 @@ export const useNotesStore = create<NotesState>()(
                     transcript,
                     status: "completed" as NoteStatus,
                     error: undefined,
+                    category: categoryResult.category,
                     iconName: categoryResult.iconName,
                     iconColor: categoryResult.iconColor,
                     iconBackgroundColor: categoryResult.iconBackgroundColor,
@@ -491,4 +513,52 @@ export const useSortedNotes = () => {
     () => [...notes].sort((a, b) => b.date.getTime() - a.date.getTime()),
     [notes],
   );
+};
+
+/**
+ * Memoized selector for filtered and sorted notes
+ * Filters by selected category, search query, and sorts newest first
+ */
+export const useFilteredNotes = () => {
+  const notes = useNotesStore((state) => state.notes);
+  const selectedCategory = useNotesStore((state) => state.selectedCategory);
+  const searchQuery = useNotesStore((state) => state.searchQuery);
+
+  return useMemo(() => {
+    let filtered = notes;
+
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter((note) => note.category === selectedCategory);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(
+        (note) =>
+          note.title.toLowerCase().includes(query) ||
+          note.transcript?.toLowerCase().includes(query),
+      );
+    }
+
+    return [...filtered].sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [notes, selectedCategory, searchQuery]);
+};
+
+/**
+ * Get unique categories from all notes
+ */
+export const useNoteCategories = () => {
+  const notes = useNotesStore((state) => state.notes);
+
+  return useMemo(() => {
+    const categories = new Set<string>();
+    notes.forEach((note) => {
+      if (note.category && note.category !== "default") {
+        categories.add(note.category);
+      }
+    });
+    return Array.from(categories);
+  }, [notes]);
 };

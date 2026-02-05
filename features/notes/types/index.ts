@@ -14,6 +14,7 @@ export interface Note {
   iconColor: string;
   iconBorderColor: string;
   iconName?: string;
+  category?: string;
   transcript?: string;
   status?: NoteStatus;
   error?: string;

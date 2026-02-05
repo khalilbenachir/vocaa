@@ -1,19 +1,35 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 
+import { useNotesStore } from "@/features/notes/stores/use-notes-store";
 import i18n from "@/i18n";
+import { CATEGORIES } from "@/lib/categories";
 import Tag from "./tag";
 
 const Tags = () => {
-  // Memoize tags array to prevent recreation on every render
+  const selectedCategory = useNotesStore((state) => state.selectedCategory);
+  const setSelectedCategory = useNotesStore(
+    (state) => state.setSelectedCategory,
+  );
+
+  const handleTagPress = useCallback(
+    (category: string | null) => {
+      setSelectedCategory(category);
+    },
+    [setSelectedCategory],
+  );
+
   const tags = useMemo(
-    () => [
-      { label: i18n.get("tags.text1"), variant: "contained" as const },
-      { label: i18n.get("tags.text2"), variant: "outlined" as const },
-      { label: i18n.get("tags.text3"), variant: "outlined" as const },
-      { label: i18n.get("tags.text4"), variant: "outlined" as const },
-    ],
-    [],
+    () =>
+      CATEGORIES.map((cat) => ({
+        key: cat.key,
+        label: i18n.t(cat.labelKey),
+        variant:
+          selectedCategory === cat.key
+            ? ("contained" as const)
+            : ("outlined" as const),
+      })),
+    [selectedCategory],
   );
 
   return (
@@ -22,8 +38,13 @@ const Tags = () => {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {tags.map((tag, index) => (
-        <Tag key={`tag-${index}`} label={tag.label} variant={tag.variant} />
+      {tags.map((tag) => (
+        <Tag
+          key={tag.key ?? "all"}
+          label={tag.label}
+          variant={tag.variant}
+          onPress={() => handleTagPress(tag.key)}
+        />
       ))}
     </ScrollView>
   );

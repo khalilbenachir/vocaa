@@ -6,8 +6,8 @@ import { useRouter } from "expo-router";
 import FailedNote from "@/features/notes/components/failed-note";
 import Note from "@/features/notes/components/note";
 import {
+  useFilteredNotes,
   useNotesStore,
-  useSortedNotes,
 } from "@/features/notes/stores/use-notes-store";
 import { Note as NoteType } from "@/features/notes/types";
 import { colors } from "@/theme/colors";
@@ -30,8 +30,8 @@ const ItemSeparator = () => <View style={styles.divider} />;
 
 const Notes = () => {
   const router = useRouter();
-  // Use memoized sorted selector instead of inline sorting
-  const notes = useSortedNotes();
+  // Use memoized filtered and sorted selector
+  const notes = useFilteredNotes();
   const retryTranscription = useNotesStore((state) => state.retryTranscription);
 
   // Memoized callbacks to prevent recreation on every render

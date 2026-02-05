@@ -8,10 +8,18 @@
     "text2": "Search..."
   },
   "tags": {
-    "text1": "All notes",
-    "text2": "Home",
-    "text3": "Ideas",
-    "text4": "Work"
+    "all": "All",
+    "meeting": "Meeting",
+    "idea": "Idea",
+    "shopping": "Shopping",
+    "task": "Task",
+    "health": "Health",
+    "travel": "Travel",
+    "finance": "Finance",
+    "learning": "Learning",
+    "work": "Work",
+    "personal": "Personal",
+    "food": "Food"
   },
   "bottomNav": {
     "addNote": "Add note",
