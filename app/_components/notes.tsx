@@ -1,6 +1,8 @@
 import React, { useCallback } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
+import { useRouter } from "expo-router";
+
 import FailedNote from "@/features/notes/components/failed-note";
 import Note from "@/features/notes/components/note";
 import {
@@ -27,14 +29,18 @@ const getItemLayout = (_: unknown, index: number) => ({
 const ItemSeparator = () => <View style={styles.divider} />;
 
 const Notes = () => {
+  const router = useRouter();
   // Use memoized sorted selector instead of inline sorting
   const notes = useSortedNotes();
   const retryTranscription = useNotesStore((state) => state.retryTranscription);
 
   // Memoized callbacks to prevent recreation on every render
-  const handleNotePress = useCallback((id: string) => {
-    console.log("Note pressed:", id);
-  }, []);
+  const handleNotePress = useCallback(
+    (id: string) => {
+      router.push(`/note/${id}`);
+    },
+    [router],
+  );
 
   const handleRetry = useCallback(
     (id: string) => {

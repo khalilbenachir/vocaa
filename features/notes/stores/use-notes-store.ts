@@ -104,6 +104,10 @@ interface NotesState {
     status: NoteStatus,
     error?: string,
   ) => void;
+  updateNote: (
+    noteId: string,
+    updates: { title?: string; transcript?: string },
+  ) => void;
   getFailedNotes: () => Note[];
   retryAllFailed: () => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
@@ -126,6 +130,16 @@ export const useNotesStore = create<NotesState>()(
         set((state) => ({
           notes: state.notes.map((n) =>
             n.id === noteId ? { ...n, status, error } : n,
+          ),
+        })),
+
+      updateNote: (
+        noteId: string,
+        updates: { title?: string; transcript?: string },
+      ) =>
+        set((state) => ({
+          notes: state.notes.map((n) =>
+            n.id === noteId ? { ...n, ...updates, date: new Date() } : n,
           ),
         })),
 

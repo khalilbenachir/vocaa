@@ -31,5 +31,30 @@
       "one": "%{count} minute left...",
       "other": "%{count} minutes left..."
     }
+  },
+  "noteDetail": {
+    "title": "Vocaa Note",
+    "lastChanged": "Last Changed: %{date}",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "done": "Done",
+    "noteTitlePlaceholder": "Note title",
+    "transcriptPlaceholder": "Transcript",
+    "noTranscript": "No transcript available for this note.",
+    "noteNotFound": "Note not found",
+    "transcriptTitle": "Transcript"
+  },
+  "audioPlayer": {
+    "noAudio": "No audio available",
+    "shareMessage": "Check out this recording"
+  },
+  "noteActions": {
+    "share": "Share Audio",
+    "copyTranscript": "Copy Transcript",
+    "delete": "Delete Note",
+    "confirmDeleteTitle": "Delete this note?",
+    "confirmDeleteMessage": "This action cannot be undone. The audio recording and transcript will be permanently deleted.",
+    "cancel": "Cancel",
+    "confirmDelete": "Delete"
   }
 }
