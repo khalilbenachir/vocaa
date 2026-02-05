@@ -1,8 +1,27 @@
-# Welcome to your Expo app 👋
+# Vocaa
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A voice notes app with AI-powered transcription and smart categorization.
 
-## Get started
+## Features
+
+- **Voice Recording** - Record audio notes with real-time waveform visualization
+- **AI Transcription** - Automatic speech-to-text using OpenAI Whisper
+- **Smart Titles** - Auto-generated titles based on transcript content
+- **Category Detection** - Automatically categorizes notes (meetings, ideas, work, etc.)
+- **Search & Filter** - Find notes by text search or filter by category
+- **Audio Playback** - Listen back to your recordings with playback controls
+- **Offline Storage** - Notes and audio files persist locally on device
+
+## Tech Stack
+
+- [Expo](https://expo.dev) (SDK 54)
+- [React Native](https://reactnative.dev) 0.81
+- [Expo Router](https://docs.expo.dev/router/introduction/) for file-based navigation
+- [Zustand](https://zustand-demo.pmnd.rs/) for state management
+- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) for animations
+- [OpenAI Whisper API](https://platform.openai.com/docs/guides/speech-to-text) for transcription
+
+## Getting Started
 
 1. Install dependencies
 
@@ -10,41 +29,31 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Set up your OpenAI API key (required for transcription)
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## Running on Device
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **iOS Simulator**: Press `i` in the terminal
+- **Android Emulator**: Press `a` in the terminal
+- **Physical Device**: Scan the QR code with Expo Go
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
 ```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+app/                    # Expo Router pages
+  _components/          # Page-specific components
+  note/[id].tsx         # Note detail view
+  index.tsx             # Home screen
+features/
+  notes/                # Notes feature module
+  recording/            # Recording feature module
+  playback/             # Audio playback module
+components/             # Shared UI components
+lib/                    # Services and utilities
+```
